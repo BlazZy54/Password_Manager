@@ -1,0 +1,150 @@
+import express from "express"
+import mongoose from "mongoose"
+
+import dotenv from 'dotenv';
+dotenv.config();
+
+import { Pwd } from './model/password.js'
+
+const app = express()
+const port = 3000
+
+
+import cors from "cors";
+app.use(cors());
+
+app.use(express.json()); // ⭐ REQUIRED to parse send json from the user
+
+await mongoose.connect(process.env.MONGO_URL + 'Password_Manager')
+
+
+app.get('/', async (req, res) => {
+    let arrayofobj = await Pwd.find({}, { _id: 0, __v: 0 }).lean();
+    // Model.find(filter, projection, options)
+    // {} → no filter (fetch all documents)
+    // { _id: 0, __v: 0 } → projection (exclude _id and __v)
+    // _id is added by MongoDB as a unique identifier
+    // __v is added by Mongoose for document versioning during concurrent updates
+    // .lean() returns plain JavaScript objects (no Mongoose documents)
+
+    console.log(arrayofobj)
+    res.json(arrayofobj) //res.json already chnages it
+})
+    .post('/', async (req, res) => {
+        let data = req.body //user sends JSON data of password
+
+        let task = req.get('Task') //gets a specified header
+        // console.log(req.headers); //gets all the header
+
+        if (task === 'insert') {
+            console.log(data)
+            const newpass = new Pwd(data) //create a new password
+            await newpass.save() //saved the data
+            res.send("Data received and added successfully")
+        }
+        else if (task === 'delete') {
+            console.log(data.id)
+            let id = data.id;
+            await Pwd.deleteOne({ id: id })
+            res.send("Data received and deleted successfully")
+        }
+        console.log("post reqqq")
+        
+    })
+
+app.listen(port, () => {
+    console.log("App is listening")
+})
+
+/*
+for express
+npm init -y
+npm i express
+
+for mongoDB
+1. npm install express mongoose
+2. create a model in ./model/password.js
+
+import mongoose from "mongoose"
+const passwordSchema = new mongoose.Schema({
+    id: String,
+    url: String,
+    username: String,
+    password: {
+        type: String,
+        require: true,
+    }
+})
+export const Pwd = mongoose.model("Password", passwordSchema) 
+//       backend             //passwords: collection name       //schema
+
+3. make a connection w mongoDB in server.js
+import mongoose from "mongoose"
+mongoose.connect("mongodb://localhost:27017/Password_Manager")    //created Password_Manager database
+OR
+------------------------------ with .env
+npm i dotenv
+
+import dotenv from 'dotenv';
+dotenv.config();
+
+mongoose.connect(process.env.MONGO_URL + 'Password_Manager')
+--------------------------------------------
+
+4. import the model and insert a new Password
+
+app.use(express.json()); // ⭐ REQUIRED to parse send json from the user
+let data = req.body // 👈 gets JSON
+
+import {Pwd} from './model/password.js' //import the model
+
+on post req (either insert or delete data)
+
+    .post('/', async (req, res) => {
+        let data = req.body //user sends JSON data of password
+
+        let task = req.get('Task') //gets a specified header
+        // console.log(req.headers); //gets all the header
+
+        if (task === 'update') {
+            const newpass = new Pwd(data) //create a new password
+            await newpass.save() //saved the data
+            res.send("Data received and added successfully")
+        }
+        else if (task === 'delete') {
+            let id = data.id;
+            await Pwd.deleteOne({ id: id })
+            res.send("Data received and deleted successfully")
+        }
+    })
+
+
+
+on get request (request all the database in a form of array)
+
+app.get('/', async (req, res) => {
+    let arrayofobj = await Pwd.find({}, { _id: 0, __v: 0 }).lean();
+    // Model.find(filter, projection, options)
+    // {} → no filter (fetch all documents)
+    // { _id: 0, __v: 0 } → projection (exclude _id and __v)
+    // _id is added by MongoDB as a unique identifier
+    // __v is added by Mongoose for document versioning during concurrent updates
+    // .lean() returns plain JavaScript objects (no Mongoose documents)
+
+    
+    res.json(arrayofobj) //res.json already chnages it
+})
+
+
+Cross-origin coz localhost both
+CORS policy error // CORS = Cross-Origin Resource Sharing
+
+npm i cors
+
+import cors from "cors";
+
+app.use(cors());
+
+CORS policy = browser security rule.
+It decides which websites are allowed to talk to your backend.
+*/
