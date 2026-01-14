@@ -235,6 +235,5 @@ Content-Type: application/json
 ## 👨‍💻 Author
 
 **Mayank Singh**
-GitHub: [https://github.com/BlazZy54](https://github.com/BlazZy54)
 
 
